@@ -61,19 +61,23 @@ public abstract class BaseSaxAnalyser implements AnalysisEventRegisterCenter, Ex
                     (List<String>)analysisContext.getCurrentRowAnalysisResult());
             }
         } else {
-            List<String> content = converter((List<String>)event.getData());
+            //List<String> content = converter((List<String>)event.getData());
             /** Parsing Analyze the body content **/
-            analysisContext.setCurrentRowAnalysisResult(content);
-            if (listeners.size() == 1) {
-                analysisContext.setCurrentRowAnalysisResult(content);
-            }
+            analysisContext.setCurrentRowAnalysisResult(event.getData());
+//            if (listeners.size() == 1) {
+//                analysisContext.setCurrentRowAnalysisResult(content);
+//            }
             /**  notify all event listeners **/
-            for (Map.Entry<String, AnalysisEventListener> entry : listeners.entrySet()) {
-                entry.getValue().invoke(analysisContext.getCurrentRowAnalysisResult(), analysisContext);
+            for (AnalysisEventListener value : listeners.values()) {
+                value.invoke(event.getData(), analysisContext);
             }
+//            for (Map.Entry<String, AnalysisEventListener> entry : listeners.entrySet()) {
+//                entry.getValue().invoke(analysisContext.getCurrentRowAnalysisResult(), analysisContext);
+//            }
         }
     }
 
+    //这里不进行转换
     private List<String> converter(List<String> data) {
         List<String> list = new ArrayList<String>();
         if (data != null) {

@@ -1,21 +1,39 @@
 package com.alibaba.excel.analysis.v03;
 
+import java.io.IOException;
+import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.List;
+
 import com.alibaba.excel.analysis.BaseSaxAnalyser;
 import com.alibaba.excel.context.AnalysisContext;
 import com.alibaba.excel.event.OneRowAnalysisFinishEvent;
 import com.alibaba.excel.exception.ExcelAnalysisException;
 import com.alibaba.excel.metadata.Sheet;
-import org.apache.poi.hssf.eventusermodel.*;
+import org.apache.poi.hssf.eventusermodel.EventWorkbookBuilder;
+import org.apache.poi.hssf.eventusermodel.FormatTrackingHSSFListener;
+import org.apache.poi.hssf.eventusermodel.HSSFEventFactory;
+import org.apache.poi.hssf.eventusermodel.HSSFListener;
+import org.apache.poi.hssf.eventusermodel.HSSFRequest;
+import org.apache.poi.hssf.eventusermodel.MissingRecordAwareHSSFListener;
 import org.apache.poi.hssf.eventusermodel.dummyrecord.LastCellOfRowDummyRecord;
 import org.apache.poi.hssf.eventusermodel.dummyrecord.MissingCellDummyRecord;
 import org.apache.poi.hssf.model.HSSFFormulaParser;
-import org.apache.poi.hssf.record.*;
+import org.apache.poi.hssf.record.BOFRecord;
+import org.apache.poi.hssf.record.BlankRecord;
+import org.apache.poi.hssf.record.BoolErrRecord;
+import org.apache.poi.hssf.record.BoundSheetRecord;
+import org.apache.poi.hssf.record.FormulaRecord;
+import org.apache.poi.hssf.record.LabelRecord;
+import org.apache.poi.hssf.record.LabelSSTRecord;
+import org.apache.poi.hssf.record.NoteRecord;
+import org.apache.poi.hssf.record.NumberRecord;
+import org.apache.poi.hssf.record.RKRecord;
+import org.apache.poi.hssf.record.Record;
+import org.apache.poi.hssf.record.SSTRecord;
+import org.apache.poi.hssf.record.StringRecord;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * /** * A text extractor for Excel files. * <p> * Returns the textual content of the file, suitable for *  indexing by
@@ -28,6 +46,7 @@ import java.util.List;
 public class XlsSaxAnalyser extends BaseSaxAnalyser implements HSSFListener {
 
     private boolean analyAllSheet = false;
+    NumberFormat numberFormat = NumberFormat.getInstance();
 
     public XlsSaxAnalyser(AnalysisContext context) throws IOException {
         this.analysisContext = context;
@@ -37,6 +56,11 @@ public class XlsSaxAnalyser extends BaseSaxAnalyser implements HSSFListener {
         }
         context.setCurrentRowNum(0);
         this.fs = new POIFSFileSystem(analysisContext.getInputStream());
+
+        //设置保留多少位小数
+        numberFormat.setMaximumFractionDigits(8);
+        // 取消科学计数法
+        numberFormat.setGroupingUsed(false);
 
     }
 
@@ -200,7 +224,9 @@ public class XlsSaxAnalyser extends BaseSaxAnalyser implements HSSFListener {
                         nextRow = frec.getRow();
                         nextColumn = frec.getColumn();
                     } else {
-                        thisStr = formatListener.formatNumberDateCell(frec);
+                        //thisStr = formatListener.formatNumberDateCell(frec);
+                         thisStr = numberFormat.format(frec.getValue());
+                        //thisStr = Double.toString(frec.getValue());
                     }
                 } else {
                     thisStr = HSSFFormulaParser.toFormulaString(stubWorkbook, frec.getParsedExpression());
@@ -250,7 +276,9 @@ public class XlsSaxAnalyser extends BaseSaxAnalyser implements HSSFListener {
                 thisColumn = numrec.getColumn();
 
                 // Format
-                thisStr = formatListener.formatNumberDateCell(numrec);
+                //thisStr = formatListener.formatNumberDateCell(numrec);
+                //thisStr = Double.toString(numrec.getValue());
+                thisStr = numberFormat.format(numrec.getValue());
                 break;
             case RKRecord.sid:
                 RKRecord rkrec = (RKRecord)record;
@@ -315,4 +343,5 @@ public class XlsSaxAnalyser extends BaseSaxAnalyser implements HSSFListener {
             notAllEmpty = false;
         }
     }
+
 }
